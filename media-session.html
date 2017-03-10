@@ -1,0 +1,156 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<!--
+`media-session`
+The MediaSession interface of Media Session API implemented in Polymer.
+
+@demo demo/index.html 
+-->
+
+<dom-module id="media-session">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+    <content id="media" select="#media"></content>
+    <content></content>
+  </template>
+
+  <script>
+    (function() {
+      Polymer({
+
+        is: 'media-session',
+
+        /**
+         * The action intent is to resume the playback.
+         *
+         * @event play
+         */
+
+        /** 
+         * The action intent is to pause a currently active playback.
+         *
+         * @event pause
+         */
+
+        /**
+         * The action intent is to move the playback time backward by a short period (eg. few seconds).
+         * 
+         * @event seekbackward
+         */
+
+        /**
+         * The action intent is to move the playback time forward by a short period (eg. few seconds).
+         * 
+         * @event seekforward
+         */
+
+        /**
+         * The action intent is to either start the current playback from the beginning if the playback has a notion of beginning or move to the previous item in the playlist if the playback has a notion of playlist.
+         * 
+         * @event previoustrack
+         */
+
+        /**
+         * The action is to move to the playback to the next item in the playlist if the playback has a notion of playlist.
+         * 
+         * @event nexttrack
+         */
+
+         /**
+         *  Media Session API is not supported.
+         * 
+         * @event unsupported
+         */
+        
+        properties: {
+          /**
+           * The playbackState attribute represents the declared playback state of the media session,
+           * by which the session declares whether its browsing context is playing media or not. 
+           */
+          playbackState: String,
+
+          skipTime: {
+            type: Number,
+            value: 10
+          },
+          
+          playlist: Array,
+
+          index: {
+            type: Number,
+            notify: true,
+            observer: '_indexChanged'
+          }
+        },
+
+        attached: function() {
+          if ('mediaSession' in navigator) {
+            var media = Polymer.dom(this.$.media).getDistributedNodes();
+            if (media.length) {
+              this.media = media[0];
+            }
+            this._setActionHandler('play');
+            this._setActionHandler('pause');
+            if (this.skipTime) {
+              this._setActionHandler('seekbackward');
+              this._setActionHandler('seekforward');
+            }
+            if (this.playlist && this.playlist.length) {
+              this._setActionHandler('previoustrack');
+              this._setActionHandler('nexttrack');
+              this.index = 0;
+            }
+          } else {
+            this.dispatchEvent(new CustomEvent('unsupported'));
+          }
+        },
+
+        /**
+         * Convert an action 
+         */
+        _setActionHandler: function(action) {
+          navigator.mediaSession.setActionHandler(action, function() {
+            this.dispatchEvent(new CustomEvent(action));
+            this[action]();
+          }.bind(this));
+          this.dispatchEvent(new CustomEvent('action-registered', {detail: action}));
+        },
+
+        play: function() {
+          this.media.play();
+        },
+
+        pause: function() {
+          this.media.pause();
+        },
+
+        seekbackward: function() {
+          this.media.currentTime = Math.max(this.media.currentTime - this.skipTime, 0);
+        },
+
+        seekforward: function() {
+          this.media.currentTime = Math.min(this.media.currentTime + this.skipTime, this.media.duration);
+        },
+
+        previoustrack: function() {
+          this.index = (this.index - 1 + this.playlist.length) % this.playlist.length;
+        },
+
+        nexttrack: function() {
+          this.index = (this.index + 1) % this.playlist.length;
+        },
+
+        _indexChanged: function(index) {
+          this.media.src = this.playlist[index];
+          this.media.play();
+        }
+
+      });
+    })(Polymer);
+    
+  </script>
+</dom-module>
