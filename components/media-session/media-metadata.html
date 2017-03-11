@@ -1,0 +1,116 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<!--
+`media-metadata`
+The MediaMetadata interface of Media Session API implemented in Polymer.
+
+@demo demo/index.html 
+-->
+
+<dom-module id="media-metadata">
+  <template>
+    <style>
+      :host {
+        display: none;
+      }
+    </style>
+    <content id="artwork" select="media-image"></content>
+  </template>
+
+  <script>
+    Polymer({
+
+      is: 'media-metadata',
+
+      properties: {
+        title: {
+          type: String,
+          value: ''
+        },
+        artist: {
+          type: String,
+          value: ''
+        },
+        album: {
+          type: String,
+          value: ''
+        },
+        artwork: {
+          type: Array,
+          readOnly: true,
+          value: function() {
+            return [];
+          }
+        },
+        active: {
+          type: Boolean,
+          value: false
+        }
+      },
+
+      observers: [
+        '_mediaMetadataChanged(active, title, artist, album, artwork)'
+      ],
+
+      attached: function() {
+        this._updateArtwork();
+      },
+
+      dettached: function() {
+        if ('mediaSession' in navigator) {
+          navigator.mediaSession.metadata = null;
+        }
+      },
+
+      _mediaMetadataChanged: function(active, title, artist, album, artwork) {
+        if ('mediaSession' in navigator) {
+          if (active) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+              title: title,
+              artist: artist,
+              album: album,
+              artwork: artwork
+            });
+          } else {
+            navigator.mediaSession.metadata = null;
+          }
+        }
+      },
+
+      _updateArtwork: function() {
+        var newArtwork = Array.prototype.slice.call(
+          Polymer.dom(this.$.artwork).getDistributedNodes()
+        );
+        // do not recompute if items have not been added or removed
+        if (newArtwork.length === this.artwork.length) {
+          var added = newArtwork.filter(function(item) {
+            return this.artwork && this.artwork.indexOf(item) === -1;
+          }.bind(this));
+
+          if (added.length === 0) {
+            // set up observer first time around
+            if (!this._artworkObserver) {
+              this._observeArtwork();
+            }
+            return;
+          }
+        }
+        this._observeArtwork();
+        this._setArtwork(newArtwork.map(function(mediaImage){
+          return {
+            src: mediaImage.src,
+            sizes: mediaImage.sizes,
+            type: mediaImage.type
+          };
+        }));
+      },
+
+      _observeArtwork: function() {
+        // Watch for future updates.
+        if (!this._artworkObserver) {
+          this._artworkObserver = Polymer.dom(this.$.artwork).observeNodes(this._updateArtwork.bind(this));
+        }
+      },
+    });
+  </script>
+</dom-module>

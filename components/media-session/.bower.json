@@ -1,0 +1,28 @@
+{
+  "name": "media-session",
+  "description": "Media Session API implemented in Polymer",
+  "main": "media-session.html",
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.4.0",
+    "iron-selector": "PolymerElements/iron-selector#^1.5.2"
+  },
+  "devDependencies": {
+    "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
+    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.0.0",
+    "web-component-tester": "^4.0.0",
+    "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0",
+    "paper-icon-button": "^1.1.4",
+    "iron-ajax": "PolymerElements/iron-ajax#^1.4.3"
+  },
+  "homepage": "https://github.com/jorgecasar/media-session",
+  "_release": "1820d67acc",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "1820d67acc964cd4140ad680f0cc9ea44e0bfc8a"
+  },
+  "_source": "https://github.com/jorgecasar/media-session.git",
+  "_target": "master",
+  "_originalSource": "https://github.com/jorgecasar/media-session.git",
+  "_direct": true
+}
