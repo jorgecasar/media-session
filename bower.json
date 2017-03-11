@@ -1,6 +1,7 @@
 {
   "name": "media-session",
   "description": "Media Session API implemented in Polymer",
+  "version": "0.1.0",
   "main": "media-session.html",
   "dependencies": {
     "polymer": "Polymer/polymer#^1.4.0",
