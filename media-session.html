@@ -1,5 +1,5 @@
 <link rel="import" href="../polymer/polymer.html">
-
+<link rel="import" href="../iron-selector/iron-selector.html">
 <!--
 `media-session`
 The MediaSession interface of Media Session API implemented in Polymer.
@@ -15,7 +15,9 @@ The MediaSession interface of Media Session API implemented in Polymer.
       }
     </style>
     <content id="media" select="#media"></content>
-    <content></content>
+    <iron-selector id="selector" items="{{items}}" selected="[[selectedMetadata]]" selected-attribute="active">
+      <content id="metadata" select="media-metadata"></content>
+    </iron-selector>
   </template>
 
   <script>
@@ -73,39 +75,37 @@ The MediaSession interface of Media Session API implemented in Polymer.
            */
           playbackState: String,
 
-          skipTime: {
-            type: Number,
-            value: 10
-          },
-          
-          playlist: Array,
+          skipTime: Number,
 
-          index: {
+          selected: {
             type: Number,
-            notify: true,
-            observer: '_indexChanged'
+            notify: true
           }
         },
 
         attached: function() {
+          this.media = this.media || Polymer.dom(this.$.media).getDistributedNodes()[0];
+          if (this.media) {
+            this.listen(this.media, 'play', 'onPlay');
+          }
           if ('mediaSession' in navigator) {
-            var media = Polymer.dom(this.$.media).getDistributedNodes();
-            if (media.length) {
-              this.media = media[0];
-            }
             this._setActionHandler('play');
             this._setActionHandler('pause');
             if (this.skipTime) {
               this._setActionHandler('seekbackward');
               this._setActionHandler('seekforward');
             }
-            if (this.playlist && this.playlist.length) {
-              this._setActionHandler('previoustrack');
-              this._setActionHandler('nexttrack');
-              this.index = 0;
-            }
+            this.listen(this.$.selector, 'items-changed', 'registerPlaylistActions'); 
           } else {
             this.dispatchEvent(new CustomEvent('unsupported'));
+          }
+        },
+
+        registerPlaylistActions: function(event) {
+          if (event.detail.value.length) {
+            this._setActionHandler('previoustrack');
+            this._setActionHandler('nexttrack');
+            this.unlisten(this.$.selector, 'items-changed', 'registerPlaylistActions');
           }
         },
 
@@ -120,8 +120,12 @@ The MediaSession interface of Media Session API implemented in Polymer.
           this.dispatchEvent(new CustomEvent('action-registered', {detail: action}));
         },
 
+        onPlay: function() {
+          this.set('selectedMetadata', this.selected);
+        },
+
         play: function() {
-          this.media.play();
+          return this.media.play();
         },
 
         pause: function() {
@@ -137,16 +141,13 @@ The MediaSession interface of Media Session API implemented in Polymer.
         },
 
         previoustrack: function() {
-          this.index = (this.index - 1 + this.playlist.length) % this.playlist.length;
+          this.selected = (this.selected - 1 + this.$.selector.items.length) % this.$.selector.items.length;
+          return this.play();
         },
 
         nexttrack: function() {
-          this.index = (this.index + 1) % this.playlist.length;
-        },
-
-        _indexChanged: function(index) {
-          this.media.src = this.playlist[index];
-          this.media.play();
+          this.selected = (this.selected + 1) % this.$.selector.items.length;
+          return this.play();
         }
 
       });

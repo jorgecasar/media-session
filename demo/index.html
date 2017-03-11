@@ -12,10 +12,8 @@
     <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
     <link rel="import" href="../../iron-flex-layout/iron-flex-layout-classes.html">
     <link rel="import" href="../../iron-ajax/iron-ajax.html">
-    <link rel="import" href="../../iron-icons/av-icons.html">
     <link rel="import" href="../../paper-header-panel/paper-header-panel.html">
-    <link rel="import" href="../../paper-toolbar/paper-toolbar.html">
-    <link rel="import" href="../../paper-icon-button/paper-icon-button.html">
+    <link rel="import" href="../../paper-toolbar/paper-toolbar.html"> 
     <link rel="import" href="../media-session.html">
     <link rel="import" href="../media-metadata.html">
     <link rel="import" href="../media-image.html">
@@ -41,15 +39,18 @@
       <template is="dom-bind" id="demo">
         
         <iron-ajax auto url="[[requestUrl]]" params="[[requestParams]]" on-response="handleResponse"></iron-ajax>
-
-        <media-session on-unsupported="logEvent" on-action-registered="logEvent" on-play="logEvent" on-pause="logEvent" on-seekbackward="logEvent" on-seekforward="logEvent" on-previoustrack="logEvent" on-nexttrack="logEvent">
-          <audio id="media" controls src$="[[track.file]]"></audio>
-          <media-metadata title="[[track.title]]" artist="[[track.artist]]" album="[[track.album]]">
-            <template is="dom-repeat" items="[[track.artwork]]">
-              <media-image src="[[item.src]]" sizes="[[item.sizes]]" type="[[item.type]]"></media-image>
-            </template>
-          </media-metadata>
+        
+        <media-session skip-time="10" on-selected-changed="changeTrackUrl" selected="[[selected]]" on-unsupported="logEvent" on-action-registered="logEvent" on-play="logEvent" on-pause="logEvent" on-seekbackward="logEvent" on-seekforward="logEvent" on-previoustrack="logEvent" on-nexttrack="logEvent">
+          <audio id="media" controls src$="[[trackUrl]]"></audio>
+          <template is="dom-repeat" items="[[playlist]]" as="track">
+            <media-metadata title="[[track.track_title]]" artist="[[track.artist_name]]" album="[[track.album_title]]">
+              <template is="dom-repeat" items="[[track.track_artwork]]" as="image">
+                <media-image src="[[image.src]]" sizes="[[image.sizes]]" type="[[image.type]]"></media-image>
+              </template>
+            </media-metadata>
+          </template>
         </media-session>
+        
         <paper-header-panel>
           <paper-toolbar>
             <h1 class="title">Media Session Log</h1>
@@ -70,7 +71,6 @@
       var apiMethod = 'tracks';
       var apiKey = 'U6VIP98FKPMBBFGT';
       var demo = document.getElementById('demo');
-      demo.mediaPaused = true;
       demo.genre_id = 10;
       demo.track = {};
       demo.requestUrl = apiEndpoint + apiMethod + '.json';
@@ -78,24 +78,38 @@
         api_key: apiKey,
         genre_id: demo.genre_id
       };
-      demo.handleResponse = function(event, request) {
-        var trackData = request.response.dataset[0];
-        demo.track = {
-          file: filesEndpoint + trackData.track_file,
-          title: trackData.track_title,
-          artist: trackData.artist_name,
-          album: trackData.album_title,
-          artwork: [{
-            src: trackData.track_image_file + '?method=crop&width=512&height=512',
-            sizes: '512x512',
-            type: 'image/jpeg'
-          }]
-        };
+      demo.handleResponse = function(event) {
+        demo.playlist = event.detail.response.dataset;
+        demo.playlist = demo.playlist.map(function(track){
+          track.track_artwork = generateArtwork(track.track_image_file);
+          return track;
+        });
+        demo.selected = 0;
       };
+      demo.changeTrackUrl = function(event) {
+        var selected = event.detail.value;
+        if (demo.playlist && demo.playlist[selected]) {
+          demo.trackUrl = filesEndpoint + demo.playlist[selected].track_file;
+        }
+      };
+
       demo.events = [];
       demo.logEvent = function(event, detail) {
         demo.push('events', (new Date()).toLocaleTimeString() + ': ' + event.type + (detail ? ' - ' + detail : ''));
       };
+      generateArtwork = function(file) {
+        var artwork = [];
+        var sizes = [96,128,192,256,384,512];
+        for (var size, i = 0; i < sizes.length; i++) {
+          size = sizes[i];
+          artwork.push({
+            src: file + '?method=crop&width='+size+'&height='+size,
+            sizes: size+'x'+size,
+            type: 'image/jpeg'
+          });
+        }
+        return artwork;
+      }
     </script>
   </body>
 </html>

@@ -41,11 +41,15 @@ The MediaMetadata interface of Media Session API implemented in Polymer.
           value: function() {
             return [];
           }
+        },
+        active: {
+          type: Boolean,
+          value: false
         }
       },
 
       observers: [
-        '_mediaMetadataChanged(title, artist, album, artwork)'
+        '_mediaMetadataChanged(active, title, artist, album, artwork)'
       ],
 
       attached: function() {
@@ -58,14 +62,18 @@ The MediaMetadata interface of Media Session API implemented in Polymer.
         }
       },
 
-      _mediaMetadataChanged: function(title, artist, album, artwork) {
+      _mediaMetadataChanged: function(active, title, artist, album, artwork) {
         if ('mediaSession' in navigator) {
-          navigator.mediaSession.metadata = new MediaMetadata({
-            title: title,
-            artist: artist,
-            album: album,
-            artwork: artwork
-          });
+          if (active) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+              title: title,
+              artist: artist,
+              album: album,
+              artwork: artwork
+            });
+          } else {
+            navigator.mediaSession.metadata = null;
+          }
         }
       },
 
